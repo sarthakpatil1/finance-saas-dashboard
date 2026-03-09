@@ -13,3 +13,14 @@ class ExpenseCreate(BaseModel):
     amount: float
     description: str
     category_id: int
+    
+class CategoryCreate(BaseModel):
+    name: str
+
+
+class Category(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True

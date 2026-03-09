@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .database import Base
+from datetime import datetime
 
 
 class User(Base):
@@ -31,11 +32,13 @@ class Expense(Base):
     amount = Column(Float)
     description = Column(String)
 
+    created_at = Column(DateTime, default=datetime.utcnow)
+
     category_id = Column(Integer, ForeignKey("categories.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
 
     category = relationship("Category", back_populates="expenses")
-    user = relationship("User")
+    user = relationship("User", back_populates="expenses")
 
 
 class Budget(Base):
