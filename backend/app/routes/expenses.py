@@ -40,10 +40,8 @@ def get_expenses(
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user)
 ):
-
-    user = db.query(models.User).filter(models.User.email == current_user).first()
-
-    expenses = db.query(models.Expense).filter(models.Expense.user_id == user.id).all()
+    
+    expenses = db.query(models.Expense).filter(models.Expense.user_id == current_user.id).all()
 
     return expenses
 

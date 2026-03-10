@@ -57,3 +57,5 @@ def get_monthly_expenses(
         {"month": int(r.month), "total": float(r.total)}
         for r in results
     ]
+    
+
