@@ -20,6 +20,11 @@ def get_expense_summary(
         .filter(models.Expense.user_id == current_user.id)\
         .scalar()
 
+    # total transactions
+    count = db.query(func.count(models.Expense.id))\
+        .filter(models.Expense.user_id == current_user.id)\
+        .scalar()
+
     # expenses grouped by category
     category_data = db.query(
         models.Category.name,
@@ -31,8 +36,14 @@ def get_expense_summary(
 
     categories = {name: amount for name, amount in category_data}
 
+    average = 0
+    if count and count > 0:
+        average = (total or 0) / count
+
     return {
         "total_expenses": total or 0,
+        "total_transactions": count or 0,
+        "average_expense": average,
         "categories": categories
     }
     
