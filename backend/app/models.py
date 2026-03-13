@@ -1,53 +1,52 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, DateTime
 from sqlalchemy.orm import relationship
-from .database import Base
 from datetime import datetime
+from app.database import Base
 
 
+# -------------------
+# USER MODEL
+# -------------------
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
     email = Column(String, unique=True, index=True)
     password = Column(String)
 
     expenses = relationship("Expense", back_populates="user")
-    budgets = relationship("Budget", back_populates="user")
 
 
+# -------------------
+# CATEGORY MODEL
+# -------------------
 class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
+    name = Column(String, unique=True)
 
     expenses = relationship("Expense", back_populates="category")
 
 
+# -------------------
+# EXPENSE MODEL
+# -------------------
 class Expense(Base):
     __tablename__ = "expenses"
 
     id = Column(Integer, primary_key=True, index=True)
-    amount = Column(Float)
-    description = Column(String)
+
+    amount = Column(Float, nullable=False)
+    description = Column(String, nullable=True)
+
+    # NEW FIELD (Date of transaction)
+    date = Column(Date, default=datetime.utcnow)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    category_id = Column(Integer, ForeignKey("categories.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
+    category_id = Column(Integer, ForeignKey("categories.id"))
 
-    category = relationship("Category", back_populates="expenses")
     user = relationship("User", back_populates="expenses")
-
-
-class Budget(Base):
-    __tablename__ = "budgets"
-
-    id = Column(Integer, primary_key=True)
-    monthly_limit = Column(Float)
-
-    user_id = Column(Integer, ForeignKey("users.id"))
-    category_id = Column(Integer, ForeignKey("categories.id"))
-
-    user = relationship("User", back_populates="budgets")
+    category = relationship("Category", back_populates="expenses")

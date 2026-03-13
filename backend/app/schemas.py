@@ -1,19 +1,33 @@
 from pydantic import BaseModel
+from datetime import date
+
+
+# -------------------------
+# USER SCHEMAS
+# -------------------------
 
 class UserCreate(BaseModel):
-    name: str
     email: str
     password: str
-    
+
+
 class UserLogin(BaseModel):
     email: str
     password: str
-    
-class ExpenseCreate(BaseModel):
-    amount: float
-    description: str
-    category_id: int
-    
+
+
+class User(BaseModel):
+    id: int
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+# -------------------------
+# CATEGORY SCHEMAS
+# -------------------------
+
 class CategoryCreate(BaseModel):
     name: str
 
@@ -21,6 +35,28 @@ class CategoryCreate(BaseModel):
 class Category(BaseModel):
     id: int
     name: str
+
+    class Config:
+        from_attributes = True
+
+
+# -------------------------
+# EXPENSE SCHEMAS
+# -------------------------
+
+class ExpenseCreate(BaseModel):
+    amount: float
+    description: str
+    category_id: int
+    date: date
+
+
+class Expense(BaseModel):
+    id: int
+    amount: float
+    description: str
+    category_id: int
+    date: date
 
     class Config:
         from_attributes = True
