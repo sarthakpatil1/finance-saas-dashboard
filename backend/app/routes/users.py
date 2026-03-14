@@ -30,10 +30,9 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     hashed_password = hash_password(user.password)
 
     new_user = models.User(
-        name=user.name,
-        email=user.email,
-        password=hashed_password
-    )
+    email=user.email,
+    password=hashed_password
+)
 
     db.add(new_user)
     db.commit()

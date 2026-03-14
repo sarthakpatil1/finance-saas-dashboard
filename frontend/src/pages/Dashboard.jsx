@@ -1,86 +1,122 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { Bar, Pie } from "react-chartjs-2"
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+import { Bar, Pie } from "react-chartjs-2";
+
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
   ArcElement,
+  Title,
   Tooltip,
   Legend
-} from "chart.js"
+} from "chart.js";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function Dashboard(){
 
-  const [expenses,setExpenses] = useState([])
+  const [expenses,setExpenses] = useState([]);
+  const [summary,setSummary] = useState({total:0,count:0,average:0});
+  const [monthly,setMonthly] = useState({labels:[],values:[]});
+  const [category,setCategory] = useState({labels:[],values:[]});
+
+  const token = localStorage.getItem("token");
+
+  const authHeader = {
+    headers:{
+      Authorization:`Bearer ${token}`
+    }
+  };
 
   useEffect(()=>{
-    fetchExpenses()
-  },[])
 
-  const fetchExpenses = async () => {
-
-    try{
-
-      const token = localStorage.getItem("token")
-
-      const res = await axios.get("http://127.0.0.1:8000/expenses",{
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      })
-
-      setExpenses(res.data)
-
-    }catch(error){
-      console.error(error)
+    if(!token){
+      window.location.href="/";
+      return;
     }
 
-  }
+    fetchExpenses();
+    fetchSummary();
+    fetchMonthly();
+    fetchCategory();
 
-  const total = expenses.reduce((sum,e)=>sum + e.amount,0)
-  const transactions = expenses.length
-  const average = transactions ? (total/transactions).toFixed(2) : 0
+  },[]);
 
-  const categoryTotals = {}
+  const fetchExpenses = async()=>{
 
-  expenses.forEach(e=>{
-    if(categoryTotals[e.category]){
-      categoryTotals[e.category] += e.amount
-    }else{
-      categoryTotals[e.category] = e.amount
-    }
-  })
+    const res = await axios.get(
+      "http://127.0.0.1:8000/expenses",
+      authHeader
+    );
 
-  const pieData = {
-    labels:Object.keys(categoryTotals),
+    setExpenses(res.data);
+
+  };
+
+  const fetchSummary = async()=>{
+
+    const res = await axios.get(
+      "http://127.0.0.1:8000/analytics/summary",
+      authHeader
+    );
+
+    setSummary(res.data);
+
+  };
+
+  const fetchMonthly = async()=>{
+
+    const res = await axios.get(
+      "http://127.0.0.1:8000/analytics/monthly",
+      authHeader
+    );
+
+    setMonthly(res.data);
+
+  };
+
+  const fetchCategory = async()=>{
+
+    const res = await axios.get(
+      "http://127.0.0.1:8000/analytics/category",
+      authHeader
+    );
+
+    setCategory(res.data);
+
+  };
+
+  const barData={
+    labels:monthly.labels,
     datasets:[
       {
-        data:Object.values(categoryTotals),
-        backgroundColor:[
-          "#4f46e5",
-          "#22c55e",
-          "#f59e0b",
-          "#ef4444",
-          "#3b82f6"
-        ]
-      }
-    ]
-  }
-
-  const barData = {
-    labels:["Expenses"],
-    datasets:[
-      {
-        label:"Total",
-        data:[total],
+        label:"Expenses",
+        data:monthly.values,
         backgroundColor:"#4f46e5"
       }
     ]
-  }
+  };
+
+  const pieData={
+    labels:category.labels,
+    datasets:[
+      {
+        data:category.values,
+        backgroundColor:["#4f46e5","#22c55e","#f59e0b"]
+      }
+    ]
+  };
 
   return(
 
@@ -88,59 +124,42 @@ function Dashboard(){
 
       <h1 className="page-title">Dashboard</h1>
 
-      {/* KPI CARDS */}
+      <div className="stats-grid">
 
-      <div className="cards-grid">
-
-        <div className="card">
+        <div className="stat-card">
           <h3>Total Expenses</h3>
-          <p>£{total}</p>
+          <p>£{summary.total}</p>
         </div>
 
-        <div className="card">
+        <div className="stat-card">
           <h3>Transactions</h3>
-          <p>{transactions}</p>
+          <p>{summary.count}</p>
         </div>
 
-        <div className="card">
+        <div className="stat-card">
           <h3>Average Expense</h3>
-          <p>£{average}</p>
+          <p>£{summary.average}</p>
         </div>
 
       </div>
-
-      {/* CHARTS */}
 
       <div className="charts-grid">
 
         <div className="chart-card">
           <h3>Monthly Expenses</h3>
-          <Bar
-            data={barData}
-            options={{
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } }
-            }}
-          />
+          <Bar data={barData}/>
         </div>
 
         <div className="chart-card">
           <h3>Expenses by Category</h3>
-          <Pie
-            data={pieData}
-            options={{
-              maintainAspectRatio: false
-            }}
-          />
+          <Pie data={pieData}/>
         </div>
 
       </div>
 
-      {/* RECENT EXPENSES */}
-
-      <h2 className="section-title">Recent Expenses</h2>
-
       <div className="table-card">
+
+        <h2>Recent Expenses</h2>
 
         <table className="expense-table">
 
@@ -155,22 +174,14 @@ function Dashboard(){
 
           <tbody>
 
-            {expenses.length === 0 ?(
-
-              <tr>
-                <td colSpan="4">No expenses yet</td>
+            {expenses.map((exp)=>(
+              <tr key={exp.id}>
+                <td>£{exp.amount}</td>
+                <td>{exp.description}</td>
+                <td>{exp.category}</td>
+                <td>{exp.date}</td>
               </tr>
-
-            ):(
-              expenses.slice(0,5).map((exp)=>(
-                <tr key={exp.id}>
-                  <td>£{exp.amount}</td>
-                  <td>{exp.description}</td>
-                  <td>{exp.category}</td>
-                  <td>{exp.date}</td>
-                </tr>
-              ))
-            )}
+            ))}
 
           </tbody>
 
@@ -180,8 +191,8 @@ function Dashboard(){
 
     </div>
 
-  )
+  );
 
 }
 
-export default Dashboard
+export default Dashboard;
