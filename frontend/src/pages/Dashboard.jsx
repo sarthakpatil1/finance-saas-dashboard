@@ -49,7 +49,6 @@ function Dashboard(){
     fetchExpenses();
     fetchSummary();
     fetchMonthly();
-    fetchCategory();
 
   },[]);
 
@@ -64,16 +63,23 @@ function Dashboard(){
 
   };
 
-  const fetchSummary = async()=>{
+const fetchSummary = async () => {
 
-    const res = await axios.get(
-      "http://127.0.0.1:8000/analytics/summary",
-      authHeader
-    );
+  const res = await axios.get(
+    "http://127.0.0.1:8000/analytics/summary",
+    authHeader
+  )
 
-    setSummary(res.data);
+  setSummary(res.data)
 
-  };
+  const categoryLabels = Object.keys(res.data.categories)
+  const categoryValues = Object.values(res.data.categories)
+
+  setCategory({
+    labels: categoryLabels,
+    values: categoryValues
+  })
+}
 
   const fetchMonthly = async()=>{
 
@@ -82,20 +88,16 @@ function Dashboard(){
       authHeader
     );
 
-    setMonthly(res.data);
+    const labels = res.data.map(item => "Month " + item.month)
+    const values = res.data.map(item => item.total)
+
+    setMonthly({
+      labels: labels,
+      values: values
+    })
 
   };
 
-  const fetchCategory = async()=>{
-
-    const res = await axios.get(
-      "http://127.0.0.1:8000/analytics/category",
-      authHeader
-    );
-
-    setCategory(res.data);
-
-  };
 
   const barData={
     labels:monthly.labels,
@@ -128,17 +130,17 @@ function Dashboard(){
 
         <div className="stat-card">
           <h3>Total Expenses</h3>
-          <p>£{summary.total}</p>
+          <p>£{summary.total_expenses || 0}</p>
         </div>
 
         <div className="stat-card">
           <h3>Transactions</h3>
-          <p>{summary.count}</p>
+          <p>{summary.total_transactions || 0}</p>
         </div>
 
         <div className="stat-card">
           <h3>Average Expense</h3>
-          <p>£{summary.average}</p>
+          <p>£{summary.average_expense || 0}</p>
         </div>
 
       </div>

@@ -8,93 +8,136 @@ function Expenses() {
 
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
 
   const token = localStorage.getItem("token");
 
-
-  const fetchExpenses = async () => {
-    const res = await axios.get("http://127.0.0.1:8000/expenses", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setExpenses(res.data);
+  const authHeader = {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   };
-
-
-  const fetchCategories = async () => {
-    const res = await axios.get("http://127.0.0.1:8000/categories");
-    setCategories(res.data);
-  };
-
 
   useEffect(() => {
+
     fetchExpenses();
     fetchCategories();
+
   }, []);
 
+  const fetchExpenses = async () => {
+
+    try {
+
+      const res = await axios.get(
+        "http://127.0.0.1:8000/expenses",
+        authHeader
+      );
+
+      setExpenses(res.data.expenses || res.data);
+
+    } catch (error) {
+
+      console.error("Error fetching expenses", error);
+
+    }
+
+  };
+
+  const fetchCategories = async () => {
+
+    try {
+
+      const res = await axios.get(
+        "http://127.0.0.1:8000/categories",
+        authHeader
+      );
+
+      setCategories(res.data);
+
+    } catch (error) {
+
+      console.error("Error fetching categories", error);
+
+    }
+
+  };
 
   const addExpense = async () => {
 
-    if (!amount || !categoryId || !date) {
-      alert("Please fill all fields");
-      return;
+    try {
+
+      await axios.post(
+        "http://127.0.0.1:8000/expenses",
+        {
+          amount: Number(amount),
+          description: description,
+          category_id: Number(category),
+          date: date
+        },
+        authHeader
+      )
+
+      setAmount("");
+      setDescription("");
+      setCategory("");
+      setDate("");
+
+      fetchExpenses();
+
+    } catch (error) {
+
+      console.error("Error adding expense", error);
+
     }
 
-    await axios.post(
-      "http://127.0.0.1:8000/expenses",
-      {
-        amount: parseFloat(amount),
-        description,
-        category_id: parseInt(categoryId),
-        date: date
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
-
-    setAmount("");
-    setDescription("");
-    setCategoryId("");
-    setDate("");
-
-    fetchExpenses();
   };
-
 
   const deleteExpense = async (id) => {
-    await axios.delete(`http://127.0.0.1:8000/expenses/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
 
-    fetchExpenses();
+    try {
+
+      await axios.delete(
+        `http://127.0.0.1:8000/expenses/${id}`,
+        authHeader
+      );
+
+      fetchExpenses();
+
+    } catch (error) {
+
+      console.error("Error deleting expense", error);
+
+    }
+
   };
 
-
   return (
-    <div>
 
-      <h1>Expenses</h1>
+    <div className="dashboard-container">
 
-      {/* FORM */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+      <h1 className="page-title">Expenses</h1>
+
+      <div className="expense-form">
 
         <input
+          type="number"
           placeholder="Amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
 
         <input
+          type="text"
           placeholder="Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
 
         <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
         >
           <option value="">Select Category</option>
 
@@ -106,22 +149,19 @@ function Expenses() {
 
         </select>
 
-
-        {/* DATE PICKER */}
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
 
-
-        <button onClick={addExpense}>Add</button>
+        <button onClick={addExpense}>
+          Add
+        </button>
 
       </div>
 
-
-      {/* TABLE */}
-      <table>
+      <table className="expense-table">
 
         <thead>
           <tr>
@@ -135,19 +175,27 @@ function Expenses() {
 
         <tbody>
 
-          {expenses.map((exp) => (
-            <tr key={exp.id}>
-              <td>£{exp.amount}</td>
-              <td>{exp.description}</td>
-              <td>{exp.category?.name}</td>
-              <td>{exp.date}</td>
+          {expenses.map((expense) => (
+
+            <tr key={expense.id}>
+
+              <td>£{expense.amount}</td>
+              <td>{expense.description}</td>
+              <td>{expense.category}</td>
+              <td>{expense.date}</td>
 
               <td>
-                <button onClick={() => deleteExpense(exp.id)}>
+
+                <button
+                  onClick={() => deleteExpense(expense.id)}
+                >
                   Delete
                 </button>
+
               </td>
+
             </tr>
+
           ))}
 
         </tbody>
@@ -155,7 +203,9 @@ function Expenses() {
       </table>
 
     </div>
+
   );
+
 }
 
 export default Expenses;
